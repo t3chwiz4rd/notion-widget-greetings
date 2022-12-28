@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<!--Original :- https://codepen.io/search/pens?q=year+progress -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap");
+        * {
+            margin: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none;
+            user-select: none;
+        }
+        :root {
+            --black: #eee;
+            --white: #111;
+            --red: rgb(206, 31, 31);
+            --day_size: 0px;
+            --barH: 20px;
+            --gridMargin: 2px;
+            --margin: 14px;
+            --bodyMargin: 100px;
+        }
+        body {
+            font-family: "Fira Code", monospace;
+            background: var(--white);
+            color: var(--black);
+            position: relative;
+            overflow: hidden;
+            transition: all 500ms cubic-bezier(0.87, -0.2, 0.15, 1.44);
+            width: 100vw;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            align-items: flex-end;
+            height: 20vh;
+            padding-left: var(--bodyMargin);
+            padding-bottom: var(--margin);
+            font-weight: 700;
+        }
+        .day_night {
+            width: 80px;
+            height: 80px;
+            position: fixed;
+            right: 0;
+            top: 0;
+            color: var(--white);
+            transition: all 650ms cubic-bezier(0.87, -0.2, 0.15, 1.44);
+            transform: translate(55px, -40px);
+            cursor: pointer;
+        }
+        .day_night.light {
+            transform: translate(55px, -40px) rotate(180deg);
+        }
+        .day_night:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0px;
+            background: var(--black);
+            border-radius: 10px;
+            z-index: -1;
+            transform: skewX(-30deg);
+        }
+        .day_night:hover {
+            right: 5px;
+            top: 5px;
+        }
+        .day_icon {
+            position: absolute;
+            bottom: 5px;
+            left: -5px;
+        }
+        .night_icon {
+            position: absolute;
+            top: 5px;
+            right: -5px;
+            transform: rotate(-74deg);
+        }
+        .main {
+            height: calc(80vh - 50px);
+            margin: 0 var(--bodyMargin);
+            padding-bottom: 50px;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            grid-template-columns: auto auto;
+            grid-template-areas:
+                "year month"
+                "day hour"
+                "days days";
+            column-gap: 14px;
+        }
+        .grid-item {
+            align-self: center;
+            margin: var(--margin) 0;
+        }
+        .bar {
+            border: 1px solid var(--black);
+            background: var(--white);
+            height: var(--barH);
+            margin-top: var(--gridMargin);
+            width: 100%;
+            box-shadow: 5px 3px #888;
+            transition: background 500ms cubic-bezier(0.87, -0.2, 0.15, 1.44);
+        }
+        .bar div {
+            background: var(--black);
+            height: 100%;
+            transition: width 450ms linear,
+                background 500ms cubic-bezier(0.87, -0.2, 0.15, 1.44);
+        }
+        .days {
+            grid-area: days;
+            display: flex;
+            flex-direction: column;
+            margin: var(--margin) 0 0 0;
+        }
+        .days_cont {
+            display: flex;
+            flex-wrap: wrap;
+            height: 100%;
+            margin-top: 5px;
+            align-content: start;
+            overflow: hidden;
+        }
+        .days_cont div {
+            border: 1px solid var(--black);
+            height: var(--day_size);
+            width: var(--day_size);
+            margin: 0 var(--gridMargin) var(--gridMargin) 0;
+        }
+        .passed {
+            background: var(--black);
+        }
+        .passed.flicker {
+            animation: flicker 1750ms linear infinite;
+        }
+        @keyframes flicker {
+            0% {
+                background: var(--white);
+            }
+            50% {
+                background: var(--red);
+            }
+            100% {
+                background: var(--white);
+            }
+        }
+        @media (max-width: 730px) {
+            :root {
+                --bodyMargin: 20px;
+            }
+            body {
+                min-height: -webkit-fill-available;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+	<h1 class="header__title">Progress / <span id="year_num"></span></h1>
+</header>
+<div class="day_night" id="day_night">
+	<span class="day_icon">🌤️</span>
+	<span class="night_icon">🌙</span>
+</div>
+<main class="main" id="main">
+	<div class="year_progress grid-item">
+		<p>Year progress: <span id="yp_text"></span></p>
+		<div class="bar">
+			<div id="yp_bar"></div>
+		</div>
+	</div>
+	<div class="month_progress grid-item">
+		<p>Month progress: <span id="mp_text"></span></p>
+		<div class="bar">
+			<div id="mp_bar"></div>
+		</div>
+	</div>
+	<div class="day_progress grid-item">
+		<p>Day progress: <span id="dp_text"></span></p>
+		<div class="bar">
+			<div id="dp_bar"></div>
+		</div>
+	</div>
+	<div class="hour_progress grid-item">
+		<p>Hour progress: <span id="hp_text"></span></p>
+		<div class="bar">
+			<div id="hp_bar"></div>
+		</div>
+	</div>
+	<div class="days">
+		<p>Day:</p>
+		<div class="days_cont" id="days_cont"></div>
+	</div>
+</main>
+<script>
+    const daysContainer = document.getElementById("days_cont");
+const yBar = document.getElementById("yp_bar");
+const mBar = document.getElementById("mp_bar");
+const dBar = document.getElementById("dp_bar");
+const hBar = document.getElementById("hp_bar");
+const yText = document.getElementById("yp_text");
+const mText = document.getElementById("mp_text");
+const dText = document.getElementById("dp_text");
+const hText = document.getElementById("hp_text");
+const yNum = document.getElementById("year_num");
+let curYearPercent = 0;
+const updInterval = 750;
+let margin = getComputedStyle(document.documentElement)
+	.getPropertyValue("--gridMargin")
+	.replace("px", "");
+const daynNite = document.getElementById("day_night");
+
+const setDaySize = () => {
+	const { width, height } = daysContainer.getBoundingClientRect();
+	let contSize = Math.floor(Math.sqrt((width * height) / 365));
+	contSize -= margin * 2;
+	document.documentElement.style.setProperty("--day_size", contSize + "px");
+};
+
+const getDaysArray = (daysCount) => {
+	const wrapper = document.createDocumentFragment();
+	for (let i = 1; i <= daysCount; i++) {
+		let day = document.createElement("div");
+		wrapper.append(day);
+	}
+	return wrapper;
+};
+
+const setHoursBarWidth = (date, now) => {
+	let elapsed = now - date;
+	elapsed = elapsed / 1000 / 60 / 60;
+	elapsed = Math.round(elapsed * 10000) / 100 + "%";
+	hText.textContent = elapsed;
+	hBar.style.width = elapsed;
+};
+
+const setDayBarWidth = (date, now) => {
+	let elapsed = now - date;
+	elapsed = elapsed / 1000 / 60 / 60 / 24;
+	elapsed = Math.round(elapsed * 100000) / 1000 + "%";
+	dText.textContent = elapsed;
+	dBar.style.width = elapsed;
+};
+
+const setMonthBarWidth = (date, now) => {
+	let elapsed = now - date;
+	let curMonthLength = new Date(
+		now.getFullYear(),
+		now.getMonth() + 1,
+		0
+	).getDate();
+	elapsed = elapsed / 1000 / 60 / 60 / 24 / curMonthLength;
+	elapsed = Math.round(elapsed * 1000000) / 10000 + "%";
+	mText.textContent = elapsed;
+	mBar.style.width = elapsed;
+};
+
+const setYearBarWidth = (date, now) => {
+	let elapsed = now - date;
+	elapsed = elapsed / 1000 / 60 / 60 / 24 / numOfDays(now.getFullYear());
+	elapsed = Math.round(elapsed * 10000000) / 100000;
+	curYearPercent = elapsed;
+	elapsed += "%";
+	yText.textContent = elapsed;
+	yBar.style.width = elapsed;
+};
+
+const setDaysCurrent = () => {
+	const currDayNum =
+		1 + Math.floor((curYearPercent * daysContainer.childNodes.length) / 100);
+	Array.from({ length: currDayNum }, (element, index) => {
+		daysContainer
+			.querySelector(`:nth-child(${index + 1})`)
+			.classList.add("passed");
+	});
+	daysContainer
+		.querySelector(`:nth-child(${currDayNum})`)
+		.classList.add("flicker");
+};
+
+const startCalculating = () => {
+	let date = new Date();
+	let now = new Date();
+	date.setMinutes(0);
+	date.setSeconds(0);
+	date.setMilliseconds(0);
+	setHoursBarWidth(date, now);
+	date.setHours(0);
+	setDayBarWidth(date, now);
+	date.setDate(1);
+	setMonthBarWidth(date, now);
+	date.setMonth(0);
+	setYearBarWidth(date, now);
+};
+
+const setYearNumber = () => {
+	yNum.innerText = new Date().getFullYear();
+};
+
+const init = () => {
+	setDaySize();
+	daysContainer.append(getDaysArray(365));
+	setYearNumber();
+	startCalculating();
+	setDaysCurrent();
+	setInterval(() => {
+		startCalculating();
+	}, updInterval);
+	window.addEventListener("resize", () => {
+		daysContainer.innerHTML = "";
+		setDaySize();
+		daysContainer.append(getDaysArray(365));
+		setDaysCurrent();
+	});
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+	init();
+});
+
+const dayNightChange = () => {
+	if (!daynNite.classList.contains("light")) {
+		document.documentElement.style.setProperty("--black", "#111");
+		document.documentElement.style.setProperty("--white", "#eee");
+		daynNite.classList.toggle("light");
+	} else {
+		document.documentElement.style.setProperty("--black", "#eee");
+		document.documentElement.style.setProperty("--white", "#111");
+		daynNite.classList.toggle("light");
+	}
+};
+
+daynNite.addEventListener("click", () => {
+	dayNightChange();
+});
+
+const numOfDays = (year) => (isLeapYear(year) ? 366 : 365);
+
+const isLeapYear = (year) => year % 4 === 0;
+
+</script>
+</body>
+</html>
